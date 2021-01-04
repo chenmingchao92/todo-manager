@@ -13,6 +13,15 @@ public class TodoListManageEntrance {
 
 	@CommandRoute(command = "list")
 	public void addTodoLists(String...todoLists) {
-		System.out.println(todoLists);
+		for (String string : todoLists) {
+			System.out.println(string);
+		}
+	}
+	@CommandRoute(command = "match")
+	public void addTodoLists(String content,String...todoLists) {
+		for (String string : todoLists) {
+			System.out.println(string);
+		}
+		System.out.println(content);
 	}
 }

@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Scanner;
@@ -51,8 +54,8 @@ public class TodoApplication {
 		/*
 		 * 表示当前命令不需要入参
 		 */
+		Method method = methodInfo.getMethod();
 		if(parameterNameAndTypes.length == 0) {
-			Method method = methodInfo.getMethod();
 			method.invoke(method, methodInfo.getMethodOfObjct());
 		}
 		/*
@@ -61,23 +64,47 @@ public class TodoApplication {
 		if(parameterNameAndTypes.length == 1) {
 			Class parameterType = parameterNameAndTypes[0].getParameterType();
 			if(parameterType.isArray()) {
-				System.out.println("aaaa");
-				return;
+				//标识没有输入命令参数
+				if(commands.length <=2 ) {
+					method.invoke(methodInfo.getMethodOfObjct(), new Object[0]);
+					return ;
+				}
+				String[] cmmandParams = Arrays.copyOfRange(commands, 2, commands.length);
+				method.invoke(methodInfo.getMethodOfObjct(), (Object)cmmandParams);
+				return ;
 			}	
-			int firstSinglyQuoted = command.indexOf("'");
-			int lastSinglyQuoted = command.lastIndexOf("'");
-			if(firstSinglyQuoted == -1 || firstSinglyQuoted == lastSinglyQuoted) {
-				System.err.println("您输入的正文内容有误，请将正文内容放入一堆单引号''中");
-			}  
-			String content = command.substring(firstSinglyQuoted+1 ,lastSinglyQuoted);
-			Method method = methodInfo.getMethod();
+			String[] commandParams = command.split("\\s+",3);
+			String content =null;
+			if(commandParams.length <=2) {
+				content = "";
+			} else {
+				content = commandParams[2];
+			}
 			method.invoke(methodInfo.getMethodOfObjct(), content);
 			
 		}
 		//表示既有命令参数  还有要操作的正文，
 		if(parameterNameAndTypes.length == 2) {
-			//第一个不以-开头的即为正文
-			
+			List<String> commandList = new ArrayList<>();
+			int contentBeginIndex = 3;
+			for (int i = 2; i < commands.length; i++) {
+				if(commands[i].startsWith("-")) {
+					commandList.add(commands[i]);
+				} else {
+					contentBeginIndex = i;
+					break;
+				}
+			}
+			String[] commandParams = command.split("\\s+",contentBeginIndex+1);
+			String content =null;
+			if(commandParams.length <=contentBeginIndex) {
+				content = "";
+			} else {
+				content = commandParams[contentBeginIndex];
+			}
+			String[] param = commandList.toArray(new String[0]);
+			method.invoke(methodInfo.getMethodOfObjct(),content,(Object)param);
+		
 		}
 
 	}
