@@ -38,7 +38,7 @@ public class TodoListManagerEntrance {
 			System.out.println("亲，在这里写作文老师是看不见的哦，您都写了800字以上啦");
 			return;
 		}
-		File todoListFile = todoListManagerService.getTodoListFile(todoListContent, defaultTodoListDoc);
+		File todoListFile = todoListManagerService.getTodoListFile(todoListFilePath ,defaultTodoListDoc);
 		todoListManagerService.addTodoList(todoListContent, todoListFile);
 	}
 
@@ -67,11 +67,13 @@ public class TodoListManagerEntrance {
 		try {
 			 lineNum = Integer.parseInt(doneLineNum);
 		} catch (NumberFormatException e) {
-			System.out.println("请输入数字！");
+			System.out.println("请输入正整数！");
+		}
+		if(lineNum < 0) {
+			System.out.println("别乱输入行不，负数你也输入");
 		}
 		File todoListFile = todoListManagerService.getTodoListFile(todoListFilePath, defaultTodoListDoc);
 		todoListManagerService.doneTodoList(lineNum, todoListFile);
-
 	}
 
 }

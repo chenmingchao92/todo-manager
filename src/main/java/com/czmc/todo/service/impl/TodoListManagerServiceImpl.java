@@ -66,15 +66,15 @@ public class TodoListManagerServiceImpl implements TodoListManagerService {
 					.collect(Collectors.toList());
 		
 			if(!optionList.contains(OptionEnum.LIST_ALL.getOrginOptionName())) {
-				todoLists  = todoLists
-						.stream().
-						filter(todoList ->{
-							int contentNoLineNumIndex  = todoList.indexOf(". ");
-							String contentString = todoList.substring(contentNoLineNumIndex+1);
-							return !contentString.startsWith(TodoListConstant.DONE_TODOLIST, 0);
-						
-						} )
-						.collect(Collectors.toList());
+				for (int i = 0; i < todoLists.size(); i++) {
+					String todoList = todoLists.get(i);
+					int lineNum = i+1;
+					int todoListDoneIdentificationIndex = todoList.indexOf(lineNum+". "+TodoListConstant.DONE_TODOLIST);
+					if( todoListDoneIdentificationIndex != 0) {
+						System.out.println(todoList);
+					}
+				}
+				return;
 				}
 			todoLists.forEach(System.out::println);
 			System.out.println("total "+todoLists.size());
@@ -83,19 +83,46 @@ public class TodoListManagerServiceImpl implements TodoListManagerService {
 	
 	@Override
 	public void doneTodoList(int lineNum, File todoListFile) throws  IOException {
+		if(lineNum>getFileLineNum(todoListFile)) {
+			System.out.println("您输入的待办事项索引不正确");
+		}
 		try(FileWriter fileWriter = new FileWriter(todoListFile,true);
 				FileReader fileReader = new FileReader(todoListFile);
-			    LineNumberReader  lineReader = new LineNumberReader(fileReader);
+				BufferedReader bufferedFileRead = new BufferedReader(fileReader);
 				BufferedWriter bufferedFileWriter = new BufferedWriter(fileWriter)) {
-			lineReader.setLineNumber(lineNum);
-			String todoList = lineReader.readLine();
-			todoList.replace(lineNum+". ", lineNum+". "+TodoListConstant.DONE_TODOLIST);
-			bufferedFileWriter.write(todoList);
-			System.out.println("Item <"+lineNum +"> done");
+				List<String> todoLists = bufferedFileRead.lines().map(todoList -> {
+					if(todoList.startsWith(lineNum+". ")) {
+						int todoListDoneIdentificationIndex = todoList.indexOf(lineNum+". "+TodoListConstant.DONE_TODOLIST);
+						if( todoListDoneIdentificationIndex != 0) {
+							todoList = todoList.replace(lineNum+". ", lineNum+". "+TodoListConstant.DONE_TODOLIST+" ");
+						} else {
+							System.out.println("该项内容  已标记为做完，不需要重复标记");
+						}
+					}
+					return todoList;
+				}).collect(Collectors.toList());
+				cleanFile(todoListFile);
+				for (String todoList : todoLists) {
+					bufferedFileWriter.write(todoList);
+					bufferedFileWriter.newLine();
+				}
+				System.out.println("Item <"+lineNum+"> done");
 		}
 	}
 	
-	
+
+	/**
+	 *  将文件清空
+	 * @param fileaName
+	 * @throws IOException 
+	 */
+	private void cleanFile(File fileName) throws IOException {
+		try(FileWriter fileWriter = new FileWriter(fileName);
+				BufferedWriter bufferedFileWriter = new BufferedWriter(fileWriter)) {
+			fileWriter.write("");
+		}
+		}
+
 	/**
 	 * 	获取文件总行号
 	 * @param todoListDoc
@@ -116,12 +143,12 @@ public class TodoListManagerServiceImpl implements TodoListManagerService {
 	 *	 创建待办事项存储文件
 	 * @throws Exception 
 	 */
-	public File getTodoListFile(String todoListFilePath,String fileName) throws IOException {
+	public File getTodoListFile(String todoListFilePath,String todoListFileName) throws IOException {
 		File directoryFile = new File(todoListFilePath);
 		if(!directoryFile.exists()) {
-			directoryFile.mkdir();
+			directoryFile.mkdirs();
 		}
-		File todoListDoc = new File(todoListFilePath+File.separatorChar+fileName);
+		File todoListDoc = new File(todoListFilePath+File.separatorChar+todoListFileName);
 		if(!todoListDoc.exists()) {
 			try {
 				boolean createFileResult = todoListDoc.createNewFile();

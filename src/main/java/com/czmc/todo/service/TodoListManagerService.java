@@ -32,7 +32,7 @@ public interface TodoListManagerService {
 	 * @throws IOException 
 	 * @throws FileNotFoundException 
 	 */
-	void doneTodoList(int lineNum,File todoListFile) throws FileNotFoundException, IOException ;
+	void doneTodoList(int lineNum,File todoListFile) throws  IOException ;
 	
-	File getTodoListFile(String todoListFilePath,String fileName) throws IOException;
+	File getTodoListFile(String todoListFilePath,String todoListFileName) throws IOException;
 }
