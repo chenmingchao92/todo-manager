@@ -19,8 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.springframework.beans.BeanUtils;
+
 import com.czmc.annotation.entrance.Entrance;
 import com.czmc.annotation.pathroute.CommandRoute;
+import com.czmc.config.SpringBootBeanUtil;
 import com.czmc.exception.CommandDuplicationException;
 import com.czmc.routetable.bean.MethodInfoBean;
 import com.czmc.routetable.bean.MethodInfoBean.ParameterNameAndType;
@@ -57,23 +60,14 @@ public final class RouteTable {
 	}
 
 	private static void saveRouteInfo(String className, Map<String, MethodInfoBean> commandRouteTable)
-			throws ClassNotFoundException, InstantiationException, IllegalAccessException, CommandDuplicationException {
+			throws ClassNotFoundException, CommandDuplicationException {
 
 		Class classObj = Class.forName(className);
 		Annotation classAnnotation = classObj.getAnnotation(Entrance.class);
 		if (classAnnotation == null) {
 			return;
 		}
-		// 唉，还是为了简化期间，必须要提供一个无参构造方法 呜呜呜 为了省时间
-		Object methodOfObject;
-		try {
-			methodOfObject = classObj.newInstance();
-		} catch (InstantiationException e) {
-			throw new InstantiationException("亲，请为" + className + "类提供一个无参构造函数哦");
-		} catch (IllegalAccessException e) {
-			throw new IllegalAccessException("亲，请为" + className + "类提供一个public权限的无参构造函数哦");
-		}
-
+		 Object	methodOfObject = SpringBootBeanUtil.getBean(classObj);
 		Entrance entrance = (Entrance) classAnnotation;
 		String functionModuleName = entrance.functionModuleName();
 		Method[] methods = classObj.getMethods();
@@ -91,8 +85,6 @@ public final class RouteTable {
 				String parameterName = parameters[i].getName();
 				Class parameterClass = parameters[i].getType();
 				if(Objects.equals(parameterName, "todoLists")) {
-					System.out.println(parameterName);
-					System.out.println(parameterClass.getName());
 				}
 				ParameterNameAndType parameterNameAndType = methodInfoBean.new ParameterNameAndType(parameterName,
 						parameterClass);
