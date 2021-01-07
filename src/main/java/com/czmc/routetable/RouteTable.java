@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 
 import org.springframework.beans.BeanUtils;
@@ -48,104 +49,46 @@ public final class RouteTable {
 	 * @throws InstantiationException
 	 * @throws IllegalAccessException
 	 * @throws CommandDuplicationException
+	 * 2020-01-05
 	 */
-	public static Map<String, MethodInfoBean> generateRouteTable() throws IOException, URISyntaxException,
-			ClassNotFoundException, InstantiationException, IllegalAccessException, CommandDuplicationException {
-		List<String> classFullNames = getAllClassFullName();
+	public static Map<String, MethodInfoBean> generateRouteTable() throws CommandDuplicationException {
 		Map<String, MethodInfoBean> commandRouteTable = new HashMap<>();
-		for (String classFullName : classFullNames) {
-			saveRouteInfo(classFullName, commandRouteTable);
-		}
+		Map<String, Object> todoListEntranceBeans =SpringBootBeanUtil.getApplicationContext().getBeansWithAnnotation(Entrance.class);
+	for (Entry<String, Object> todoListEntranceBeanEntry : todoListEntranceBeans.entrySet()) {
+		Object todoListEntranceBean = todoListEntranceBeanEntry.getValue();
+		saveRouteInfo(todoListEntranceBean, todoListEntranceBean.getClass(), commandRouteTable);
+	}
 		return commandRouteTable;
 	}
 
-	private static void saveRouteInfo(String className, Map<String, MethodInfoBean> commandRouteTable)
-			throws ClassNotFoundException, CommandDuplicationException {
-
-		Class classObj = Class.forName(className);
-		Annotation classAnnotation = classObj.getAnnotation(Entrance.class);
-		if (classAnnotation == null) {
-			return;
-		}
-		 Object	methodOfObject = SpringBootBeanUtil.getBean(classObj);
-		Entrance entrance = (Entrance) classAnnotation;
+	private static void saveRouteInfo(Object todoListEntranceBean,Class todoListEntranceBeanClass, Map<String, MethodInfoBean> commandRouteTable)
+			throws  CommandDuplicationException {
+		Entrance entrance = (Entrance) todoListEntranceBeanClass.getAnnotation(Entrance.class);
 		String functionModuleName = entrance.functionModuleName();
-		Method[] methods = classObj.getMethods();
+		Method[] methods = todoListEntranceBeanClass.getMethods();
 		for (Method method : methods) {
-			Annotation methodAnnotation = method.getAnnotation(CommandRoute.class);
-			if (methodAnnotation == null) {
+			Annotation commandRouteAnnotation = method.getAnnotation(CommandRoute.class);
+			if (commandRouteAnnotation == null) {
 				continue;
 			}
-			CommandRoute commandRoute = (CommandRoute) methodAnnotation;
-			String commandName = commandRoute.command();
+			CommandRoute commandRoute = (CommandRoute) commandRouteAnnotation;
+			String commandName = commandRoute.command(); 
 			Parameter[] parameters = method.getParameters();
 			ParameterNameAndType[] parameterNameAndTypes = new ParameterNameAndType[parameters.length];
-			MethodInfoBean methodInfoBean = new MethodInfoBean(method, methodOfObject, parameterNameAndTypes);
+			MethodInfoBean methodInfoBean = new MethodInfoBean(method, todoListEntranceBean, parameterNameAndTypes);
 			for (int i = 0; i < parameters.length; i++) {
 				String parameterName = parameters[i].getName();
 				Class parameterClass = parameters[i].getType();
-				if(Objects.equals(parameterName, "todoLists")) {
-				}
 				ParameterNameAndType parameterNameAndType = methodInfoBean.new ParameterNameAndType(parameterName,
 						parameterClass);
 				parameterNameAndTypes[i] = parameterNameAndType;
 			}
-			String uniqueCommandName = functionModuleName + commandName;
-			if (commandRouteTable.get(uniqueCommandName) != null) {
+			String completeCommandName = functionModuleName + commandName;
+			if (commandRouteTable.get(completeCommandName) != null) {
 				throw new CommandDuplicationException(
-						"存在重复的命令指向了不同的方法！--类为：" + className + "命令名称为：" + uniqueCommandName);
+						"存在重复的命令指向了不同的方法！--类为：" + todoListEntranceBeanClass.getName() + "命令名称为：" + completeCommandName);
 			}
-			commandRouteTable.put(uniqueCommandName, methodInfoBean);
+			commandRouteTable.put(completeCommandName, methodInfoBean);
 		}
 	}
-
-	/**
-	 * 获取所有的class的全名 因为项目中类的数量有限，因此这里为了让执行过程更清晰，才用了获取所有的类全名称
-	 * 
-	 * @return
-	 * @throws URISyntaxException
-	 * @throws IOException
-	 */
-	private static List<String> getAllClassFullName() throws IOException, URISyntaxException {
-		URL url = ClassLoader.getSystemResource("");
-		Path projectPath = null;
-		try {
-			projectPath = Paths.get(url.toURI());
-		} catch (URISyntaxException e1) {
-			throw new URISyntaxException(url.toString(), "URL格式转为URI格式的时候发生了异常");
-		}
-		/*
-		 * 此路径是为了在遍历包的时候，能通过截取字符串的方式，去掉项目路径只保留包路径
-		 */
-		final Path projectRootPath = projectPath;
-		List<String> classFullNames = new ArrayList<>();
-		try {
-			Files.walkFileTree(projectPath, new SimpleFileVisitor<Path>() {
-				@Override
-				public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
-					File file = path.toFile();
-					String classSuffix = ".class";
-					if (file.getName().endsWith(classSuffix)) {
-						String absolutePath = file.getAbsolutePath();
-						// 获取到包名+类名组合的全名
-						String classFullName = absolutePath
-								.replace(projectRootPath.toFile().getAbsolutePath() + File.separator, "");
-						// 将分隔符改成包分隔符
-						classFullName = classFullName.replace(File.separatorChar, '.');
-						/*
-						 * 去掉包后缀
-						 */
-						int classSuffixIndex = classFullName.lastIndexOf(classSuffix);
-						classFullName = classFullName.substring(0, classSuffixIndex);
-						classFullNames.add(classFullName);
-					}
-					return super.visitFile(path, attrs);
-				}
-			});
-		} catch (IOException e) {
-			throw new IOException("遍历项目文件搜寻所有class文件名称的时候，发生了一次");
-		}
-		return classFullNames;
-	}
-
 }

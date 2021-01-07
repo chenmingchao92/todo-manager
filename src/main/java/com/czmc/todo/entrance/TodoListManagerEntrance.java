@@ -1,7 +1,6 @@
 package com.czmc.todo.entrance;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,20 +37,20 @@ public class TodoListManagerEntrance {
 			System.out.println("亲，在这里写作文老师是看不见的哦，您都写了800字以上啦");
 			return;
 		}
-		File todoListFile = todoListManagerService.getTodoListFile(todoListFilePath ,defaultTodoListDoc);
+		File todoListFile = todoListManagerService.getTodoListFile(todoListFilePath, defaultTodoListDoc);
 		todoListManagerService.addTodoList(todoListContent, todoListFile);
 	}
 
 	@CommandRoute(command = "list")
-	public void addTodoLists(String... options) throws IOException {
+	public void displayTodoList(String... options) throws IOException {
 		if (options.length != 0) {
-			String functionMoudleCommandName = TodoListConstant.FUNCTION_MOUDLE_NAME + "_list";
+			String completeCommandName = TodoListConstant.FUNCTION_MOUDLE_NAME + "_list";
 			List<String> optionCaches = optionCache.getOptions();
 			for (String todoListOption : options) {
-				if (!optionCaches.contains(functionMoudleCommandName + todoListOption)) {
+				if (!optionCaches.contains(completeCommandName + todoListOption)) {
 					System.out.println("您输入的命令选项不存在，系统支持以下命令");
 					for (String option : optionCaches) {
-						System.out.println(option.replace(functionMoudleCommandName, ""));
+						System.out.println(option.replace(completeCommandName, ""));
 					}
 					return;
 				}
@@ -62,14 +61,14 @@ public class TodoListManagerEntrance {
 	}
 
 	@CommandRoute(command = "done")
-	public void addTodoLists(String doneLineNum) throws  IOException {
+	public void doneTodoList(String doneLineNum) throws IOException {
 		Integer lineNum = 0;
 		try {
-			 lineNum = Integer.parseInt(doneLineNum);
+			lineNum = Integer.parseInt(doneLineNum);
 		} catch (NumberFormatException e) {
 			System.out.println("请输入正整数！");
 		}
-		if(lineNum < 0) {
+		if (lineNum < 0) {
 			System.out.println("别乱输入行不，负数你也输入");
 		}
 		File todoListFile = todoListManagerService.getTodoListFile(todoListFilePath, defaultTodoListDoc);

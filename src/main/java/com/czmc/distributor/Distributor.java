@@ -35,8 +35,7 @@ public final class Distributor {
 	 * @author cmc 2020-01-05
 	 */
 	public static void commandDistributeEntrance(String commandLineInputContent)
-			throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException,
-			URISyntaxException, CommandDuplicationException, InvocationTargetException {
+			throws  IllegalAccessException, CommandDuplicationException, InvocationTargetException {
 		Map<String, MethodInfoBean> commandRouteTable = RouteTable.generateRouteTable();
 		String[] commandAndOptionAndParameter = commandLineInputContent.split(commandLineInputContentSeparator);
 		String functionModuleName = commandAndOptionAndParameter[0];
