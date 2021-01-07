@@ -38,6 +38,10 @@ public final class Distributor {
 			throws  IllegalAccessException, CommandDuplicationException, InvocationTargetException {
 		Map<String, MethodInfoBean> commandRouteTable = RouteTable.generateRouteTable();
 		String[] commandAndOptionAndParameter = commandLineInputContent.split(commandLineInputContentSeparator);
+		if(commandAndOptionAndParameter.length<2) {
+			System.out.println("对不起 您输入的命令不存在");
+			return ;
+		}
 		String functionModuleName = commandAndOptionAndParameter[0];
 		String commandName = commandAndOptionAndParameter[1];
 		String functionModuleCommandName = functionModuleName + commandName;
